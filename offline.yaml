@@ -1,0 +1,54 @@
+defaults:
+  - agent: ddpg
+  - override hydra/launcher: submitit_local
+
+replay_buffer_dir: 2024.01.17/190632_icm
+num_episodes: 1000
+# mode
+reward_free: false
+# task settings
+task: walker_run
+obs_type: states # [states, pixels]
+frame_stack: 3 # only works if obs_type=pixels
+action_repeat: 1 # set to 2 for pixels
+discount: 0.99
+# train settings
+num_train_frames: 100010 # this is the training steps!
+num_seed_frames: 4000
+# eval
+eval_every_frames: 10000
+num_eval_episodes: 10
+# pretrained
+snapshot_ts: 0
+snapshot_base_dir: ../../../models
+# replay buffer
+replay_buffer_size: 1000000
+replay_buffer_num_workers: 4 # must be the same with online
+batch_size: ${agent.batch_size}
+nstep: ${agent.nstep}
+update_encoder: false # can be either true or false depending if we want to fine-tune encoder
+# misc
+seed: 1
+device: cuda
+save_video: true
+save_train_video: false
+use_tb: true
+use_wandb: false
+# experiment
+experiment: exp
+
+
+hydra:
+  run:
+    dir: ./exp_local/${now:%Y.%m.%d}/${now:%H%M%S}_${agent.name}
+  sweep:
+    dir: ./exp_sweep/${now:%Y.%m.%d}/${now:%H%M}_${agent.name}_${experiment}
+    subdir: ${hydra.job.num}
+  launcher:
+    timeout_min: 4300
+    cpus_per_task: 10
+    gpus_per_node: 1
+    tasks_per_node: 1
+    mem_gb: 160
+    nodes: 1
+    submitit_folder: ./exp_sweep/${now:%Y.%m.%d}/${now:%H%M}_${agent.name}_${experiment}/.slurm
